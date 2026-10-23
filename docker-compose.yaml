@@ -1,0 +1,129 @@
+services:
+  redis:
+    image: redis:latest
+    env_file:
+      - .env.docker
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - celeryNetworks
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - celeryNetworks
+
+
+  postgresql:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASS:?DB_PASS is required}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql_data:/var/lib/postgresql
+    networks:
+      - celeryNetworks
+
+  migrations:
+    build: .
+    command: alembic upgrade head
+    env_file:
+      - .env.docker
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - celeryNetworks
+
+  worker:
+    build: .
+    command: celery -A wallet_api.tasks.celery_app worker -l info
+    env_file:
+      - .env.docker
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - celeryNetworks
+
+
+  celery_beat:
+    build: .
+    command: celery -A wallet_api.tasks.celery_app beat -l info --schedule=/var/lib/celery/celerybeat-schedule
+    env_file:
+      - .env.docker
+    volumes:
+      - celerybeat_data:/var/lib/celery
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - celeryNetworks
+
+  app:
+    build: .
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy 
+      migrations:
+        condition: service_completed_successfully
+    networks:
+      - celeryNetworks
+
+volumes:
+  postgresql_data:
+  redis_data:
+  rabbitmq_data:
+  celerybeat_data:
+
+networks:
+  celeryNetworks:
+    driver: bridge
+

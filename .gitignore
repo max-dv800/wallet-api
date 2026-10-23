@@ -1,0 +1,13 @@
+/.coverage
+/.env
+/.env.docker
+/.mypy_cache
+/.pytest.env
+/.pytest_cache
+/.ruff_cache
+/.venv
+/.vscode
+/__pycache__
+/celerybeat-schedule
+/.python-version
+/ruff.toml

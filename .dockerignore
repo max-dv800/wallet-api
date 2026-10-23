@@ -1,0 +1,72 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# --- Виртуальные окружения ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Тесты и качество кода ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+tests/
+test/
+docs/
+
+# --- Git и IDE ---
+.git/
+.gitignore
+.gitattributes
+.github/
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# --- Docker ---
+Dockerfile*
+docker-compose*.yml
+compose*.yml
+.dockerignore
+
+# --- Секреты и локальные конфиги ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Логи, кэш, временное ---
+*.log
+logs/
+tmp/
+.cache/
+
+# --- Node (если есть фронт в репо) ---
+node_modules/
+frontend/
+
+# --- Мусор репозитория ---
+CHANGELOG.md
+LICENSE
+Makefile
+justfile
+pyproject.toml.bak
